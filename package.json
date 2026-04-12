@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node downloader.js",
-    "download": "node downloader.js"
+    "download": "node downloader.js",
+    "prompt": "node lowpoly-prompter.js"
   },
   "dependencies": {
     "@gltf-transform/cli": "^4.3.0",
