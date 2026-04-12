@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Lowpoly Text-to-3D Prompter — browserless
  *

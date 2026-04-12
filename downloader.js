@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Optimized Hunyuan 3D Asset Downloader
  *
