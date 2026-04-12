@@ -13,6 +13,15 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm publish --access public
+      - name: Publish if version not yet on registry
+        run: |
+          PKG=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          EXISTS=$(npm view "$PKG@$VER" version 2>/dev/null || true)
+          if [ "$EXISTS" = "$VER" ]; then
+            echo "Already published $PKG@$VER — skipping"
+          else
+            npm publish --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
