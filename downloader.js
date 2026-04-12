@@ -58,9 +58,12 @@ function saveState(state) {
 function hasValidSession() {
   if (!fs.existsSync(SESSION_FILE)) return false;
   try {
-    const stat = fs.statSync(SESSION_FILE);
-    const ageDays = (Date.now() - stat.mtime.getTime()) / (1000 * 60 * 60 * 24);
-    return ageDays < SESSION_VALID_DAYS;
+    const session = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
+    const cookies = session.cookies || [];
+    if (cookies.length === 0) return false;
+    const now = Date.now() / 1000;
+    const expired = cookies.filter(c => c.expires && c.expires < now);
+    return expired.length === 0;
   } catch {
     return false;
   }
