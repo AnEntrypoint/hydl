@@ -29,6 +29,7 @@ const readline = require('readline');
 const { spawn } = require('child_process');
 const CacheManager = require('./cache-manager');
 const AssetCache = require('./asset-cache');
+const api = require('./api');
 
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
 const STATE_FILE = path.join(__dirname, 'download-state.json');
@@ -584,33 +585,62 @@ class OptimizedDownloader {
     console.log(`[Convert] Done — ${done.length} file(s) in converted/, ${movedCount} source(s) removed from downloads/`);
   }
 
+  async fetchAssetListDirect() {
+    console.log('[API] Fetching asset list via HTTP...');
+    const { status, data } = await api.listCreations({ pageSize: 100, sceneType: 'lowPoly' });
+    if (status === 401) throw new Error('Session expired — run node downloader.js --reset-cache to re-login');
+    const list = data?.creations || data?.data || [];
+    const assets = list.map(c => ({
+      id: c.id,
+      title: c.title || c.name || c.id,
+      result: (c.result || []).filter(r => r.status === 'success'),
+    }));
+    console.log(`[API] ✓ ${assets.length} asset(s) found`);
+    return assets;
+  }
+
+  async deleteAssetDirect(asset) {
+    const { id, title } = asset;
+    console.log(`[Delete] Deleting "${title}" (${id})...`);
+    try {
+      const { status, data } = await api.deleteCreation(id);
+      if (status === 200) {
+        console.log(`[Delete] ✓ "${title}" deleted`);
+        return true;
+      }
+      console.log(`[Delete] ✗ "${title}" failed: HTTP ${status}`);
+      return false;
+    } catch (err) {
+      console.log(`[Delete] ✗ Error: ${err.message}`);
+      return false;
+    }
+  }
+
   async run() {
     try {
-      await this.init();
       console.log('\n[START] Asset download workflow started\n');
 
       if (!fs.existsSync(DOWNLOADS_DIR)) {
         fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
       }
 
-      // Start fetching asset list (captures the API response triggered by navigation)
-      const assetListPromise = this.fetchAssetList();
-
-      await this.navigateToAssets();
-      const itemCount = await this.waitForListItems();
-
-      if (itemCount === 0) {
-        console.log('[INFO] No assets available on account');
+      // Login via browser only if no valid session
+      if (!hasValidSession()) {
+        console.log('[Session] No valid session — launching browser for login...');
+        await this.init();
+        await this.navigateToAssets();
         await this.saveSession();
-        return;
+        await this.close();
+        console.log('[Session] ✓ Logged in, session saved');
+      } else {
+        console.log('[Session] ✓ Using existing session');
       }
 
-      console.log(`\n[INFO] Found ${itemCount} assets, waiting for API data...`);
-      const assets = await assetListPromise;
+      // All API calls go direct — no browser needed
+      const assets = await this.fetchAssetListDirect();
 
       if (assets.length === 0) {
-        console.log('[ERROR] Could not retrieve asset data from API');
-        await this.saveSession();
+        console.log('[INFO] No assets available on account');
         return;
       }
 
@@ -629,7 +659,7 @@ class OptimizedDownloader {
           totalDownloaded += downloaded.length;
           console.log(`[${i + 1}/${assets.length}] ✓ All ${downloaded.length} files downloaded — deleting from server`);
 
-          const deleted = await this.deleteAsset(asset);
+          const deleted = await this.deleteAssetDirect(asset);
           if (deleted) totalDeleted++;
 
           this.state.processedCount++;
@@ -643,7 +673,6 @@ class OptimizedDownloader {
       }
 
       await this.convertDownloadedGlbs();
-      await this.saveSession();
 
       console.log('\n' + '═'.repeat(60));
       console.log(`  SUMMARY`);
@@ -658,7 +687,7 @@ class OptimizedDownloader {
       console.error('\n[FATAL]', error.message);
       process.exit(1);
     } finally {
-      await this.close();
+      if (this.browser) await this.close();
     }
   }
 }
