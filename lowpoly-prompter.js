@@ -56,7 +56,7 @@ async function run() {
     throw new Error(`Generate failed: HTTP ${status} — ${JSON.stringify(data)?.slice(0, 200)}`);
   }
 
-  const creationId = data?.id || data?.creationId || data?.data?.id;
+  const creationId = data?.id || data?.creationId || data?.creationsId || data?.data?.id;
   if (!creationId) {
     throw new Error(`No creation ID in response: ${JSON.stringify(data)?.slice(0, 300)}`);
   }
