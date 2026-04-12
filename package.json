@@ -1,6 +1,6 @@
 {
   "name": "hydl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Hunyuan 3D Asset Downloader — download and manage Hunyuan 3D lowpoly assets",
   "main": "downloader.js",
   "bin": {

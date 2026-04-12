@@ -10,7 +10,11 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const SESSION_FILE = path.join(__dirname, 'browser-session.json');
+const SESSION_FILE = (() => {
+  const cwd = path.join(process.cwd(), 'browser-session.json');
+  const pkg = path.join(__dirname, 'browser-session.json');
+  return require('fs').existsSync(cwd) ? cwd : pkg;
+})();
 const BASE = 'https://3d.hunyuan.tencent.com';
 
 // Key derivation from bundle constants (module 47436)

@@ -32,9 +32,10 @@ const CacheManager = require('./cache-manager');
 const AssetCache = require('./asset-cache');
 const api = require('./api');
 
-const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
-const STATE_FILE = path.join(__dirname, 'download-state.json');
-const SESSION_FILE = path.join(__dirname, 'browser-session.json');
+const WORK_DIR = fs.existsSync(path.join(process.cwd(), 'browser-session.json')) ? process.cwd() : __dirname;
+const DOWNLOADS_DIR = path.join(WORK_DIR, 'downloads');
+const STATE_FILE = path.join(WORK_DIR, 'download-state.json');
+const SESSION_FILE = path.join(WORK_DIR, 'browser-session.json');
 const WEBSITE_URL = 'https://3d.hunyuan.tencent.com/assets';
 
 const ASSETS_PER_BLOCK = 4;
