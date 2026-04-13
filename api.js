@@ -115,7 +115,7 @@ async function generate({ prompt, style = '', polygonType = 'triangle', modelTyp
     count: 4,
     modelType,
     title: prompt,
-    style,
+    style: style === '\u901A\u7528' ? '' : style,
     prompt,
     enable_pbr: true,
     enableLowPoly: false,
